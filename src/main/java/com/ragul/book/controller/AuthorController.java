@@ -1,7 +1,9 @@
 package com.ragul.book.controller;
 
 import com.ragul.book.model.entity.Author;
+import com.ragul.book.model.payload.ApiResponse;
 import com.ragul.book.repository.AuthorRepository;
+import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,36 +19,43 @@ public class AuthorController {
     AuthorRepository authorRepository;
 
     @GetMapping
-    public ResponseEntity<List<Author>> get() {
+    public ResponseEntity<ApiResponse<List<Author>>> get() {
         List<Author> authors = this.authorRepository.findAll();
-        return new ResponseEntity<>(authors, HttpStatus.OK);
+        return new ResponseEntity<>(new ApiResponse<>(authors), HttpStatus.OK);
     }
 
     @PostMapping
-    public ResponseEntity<Author> add(@RequestBody Author authorRes) {
+    public ResponseEntity<ApiResponse<Author>> add(@RequestBody Author authorRes) {
         Author author = this.authorRepository.save(authorRes);
-        return new ResponseEntity<>(author, HttpStatus.OK);
+        return new ResponseEntity<>(new ApiResponse<>(author), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Author> getById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Author>> getById(@PathVariable Long id) {
         Optional<Author> author = this.authorRepository.findById(id);
-        return new ResponseEntity<>(author.get(), HttpStatus.OK);
+        if (author.isPresent()) {
+            return new ResponseEntity<>(new ApiResponse<>(author.get()), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(new ApiResponse<>(HttpStatus.NOT_FOUND, "Author id: " + id + " not found"), HttpStatus.OK);
     }
 
     @PutMapping
-    public ResponseEntity<Author> edit(@RequestBody Author author) {
+    public ResponseEntity<ApiResponse<Author>> edit(@RequestBody Author author) {
+        Optional<Author> authorOptional = this.authorRepository.findById(author.getId());
+        if (!authorOptional.isPresent()) {
+            return new ResponseEntity<>(new ApiResponse<>(HttpStatus.NOT_FOUND, "Author id: " + author.getId() + " not found"), HttpStatus.OK);
+        }
         authorRepository.save(author);
-        return new ResponseEntity<>(author, HttpStatus.OK);
+        return new ResponseEntity<>(new ApiResponse<>(author), HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Long> edit(@PathVariable Long id) {
-        Optional<Author> book = authorRepository.findById(id);
-        if (book.isPresent()) {
-            authorRepository.delete(book.get());
-            return new ResponseEntity<>(id, HttpStatus.OK);
+    public ResponseEntity<ApiResponse<Long>> edit(@PathVariable Long id) {
+        Optional<Author> author = authorRepository.findById(id);
+        if (author.isPresent()) {
+            authorRepository.delete(author.get());
+            return new ResponseEntity<>(new ApiResponse<>(id), HttpStatus.OK);
         }
-        return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(new ApiResponse<>(HttpStatus.NOT_FOUND, "Author id: " + id + " not found"), HttpStatus.OK);
     }
 }
