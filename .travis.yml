@@ -1,0 +1,6 @@
+language: java
+jdk:
+  - openjdk8
+script: ./mvnw clean install
+
+notifications: ragulan28@gmail.com
